@@ -626,6 +626,9 @@ static int stream_packet(struct stream_fd *sfd, str *s, struct sockaddr_in6 *fsi
 	struct interface_address *loc_addr;
 	struct rtp_header *rtp_h;
 	struct rtp_stats *rtp_s;
+        int can_use_libjitter = 1;
+        int is_rtp_packet = 0;
+        int is_encrypted_packet = 0;
 
 	call = sfd->call;
 	cm = call->callmaster;
@@ -716,11 +719,11 @@ loop_ok:
 	out_srtp = sink;
 	if (rtcp && sink && sink->rtcp_sibling)
 		out_srtp = sink->rtcp_sibling;
-
-
+        
 	/* stats per RTP payload type */
 
 	if (media->protocol && media->protocol->rtp && !rtcp && !rtp_payload(&rtp_h, NULL, s)) {
+          is_rtp_packet = 1;
 		i = (rtp_h->m_pt & 0x7f);
 
 		rtp_s = g_hash_table_lookup(stream->rtp_stats, &i);
@@ -904,8 +907,28 @@ forward:
 
 	mh.msg_iov = &iov;
 	mh.msg_iovlen = 1;
+        
+        // check if libjitter loaded
+        if (!cm->conf.libjitter.sendmsg) {
+          can_use_libjitter = 0;
+        }
+        // check it is not rtcp
+        if (!is_rtp_packet) {
+          can_use_libjitter = 0;
+        }
+        // check if destination is encrypted
+        if (sink) {
+          is_encrypted_packet = sink->media->protocol->srtp | sink->media->protocol->avpf;
+        }
+        if (is_encrypted_packet) {
+          can_use_libjitter = 0;
+        }
 
-	ret = sendmsg(sink->sfd->fd.fd, &mh, 0);
+        if (can_use_libjitter == 1) {
+          ret = cm->conf.libjitter.sendmsg(sink->sfd->fd.fd, &mh, 0);
+        } else {
+          ret = sendmsg(sink->sfd->fd.fd, &mh, 0);
+        }
 
 	if (ret == -1) {
 		ret = 0; /* temp for address family mismatches */

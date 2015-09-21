@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <openssl/ssl.h>
+#include <dlfcn.h>
 
 #include "poller.h"
 #include "control_tcp.h"
@@ -444,7 +445,23 @@ static void init_everything() {
 	dtls_init();
 	ice_init();
 }
+void init_libjitter_api(struct libjitter_api * ctx) {
+  const char * error_msg;
+  ctx->handle = dlopen("libjitter.so", RTLD_LAZY);
+  if (!ctx->handle) {
+    ilog(LOG_INFO, "Failed to load libjitter.so");
+    return;
+  }
+  ctx->sendmsg = dlsym(ctx->handle, "libjitter_sendmsg");
+  if ((error_msg = dlerror()) != NULL)  {
+    die("Error loading symbols from libjitter.so: %s", error_msg);
+  }
+  ctx->init = dlsym(ctx->handle, "libjitter_init");
+  ctx->close = dlsym(ctx->handle, "libjitter_close");
+  ctx->shutdown = dlsym(ctx->handle, "libjitter_shutdown");
+  ilog(LOG_INFO, "Linked to libjitter OK, sendmsg@(%p)", ctx->sendmsg);
 
+}
 void create_everything(struct main_context *ctx) {
 	struct callmaster_config mc;
 	struct control_tcp *ct;
@@ -551,6 +568,7 @@ no_kernel:
 
 	timeval_from_ms(&tmp_tv, graphite_interval*1000000);
 	set_graphite_interval_tv(&tmp_tv);
+        init_libjitter_api(&mc.libjitter);
 }
 
 int main(int argc, char **argv) {

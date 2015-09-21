@@ -427,7 +427,13 @@ struct interface_address {
 	char			foundation_buf[16];
 	unsigned int		preference; /* starting with 0 */
 };
-
+struct libjitter_api {
+  void * handle;
+  void (*init)();
+  void (*shutdown)();
+  int  (*sendmsg)(int socket, const struct msghdr *message, int flags);
+  void (*close)(int socket);
+};
 struct callmaster_config {
 	int			kernelfd;
 	int			kernelid;
@@ -445,6 +451,7 @@ struct callmaster_config {
 	u_int32_t		graphite_ip;
 	u_int16_t		graphite_port;
 	int			graphite_interval;
+        struct libjitter_api    libjitter;
 };
 
 struct callmaster {
