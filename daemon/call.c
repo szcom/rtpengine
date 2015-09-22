@@ -2825,7 +2825,7 @@ void call_destroy(struct call *c) {
 	int cdrlinecnt = 0;
 	int found = 0;
 	const struct rtp_payload_type *rtp_pt;
-
+        
 	rwlock_lock_w(&m->hashlock);
 	ret = g_hash_table_remove(m->callhash, &c->callid);
 	rwlock_unlock_w(&m->hashlock);
@@ -3132,6 +3132,9 @@ void call_destroy(struct call *c) {
 
 	while (c->stream_fds) {
 		sfd = c->stream_fds->data;
+                if (m->conf.libjitter.close != NULL) {
+                  m->conf.libjitter.close(sfd->fd.fd);
+                }
 		c->stream_fds = g_slist_delete_link(c->stream_fds, c->stream_fds);
 		poller_del_item(p, sfd->fd.fd);
 		obj_put(sfd);
