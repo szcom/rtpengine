@@ -909,7 +909,7 @@ forward:
 	mh.msg_iovlen = 1;
         
         // check if libjitter loaded
-        ilog(LOG_INFO, "check if sendmsg can be used %d", can_use_libjitter);
+        ilog(LOG_INFO, "check if sendmsg can be used %d dst port %d", can_use_libjitter, sink->endpoint.port);
         if (!cm->conf.libjitter.sendmsg) {
         	ilog(LOG_INFO, "no sendmsg");
           can_use_libjitter = 0;
