@@ -909,11 +909,14 @@ forward:
 	mh.msg_iovlen = 1;
         
         // check if libjitter loaded
+        ilog(LOG_INFO, "check if sendmsg can be used %d", can_use_libjitter);
         if (!cm->conf.libjitter.sendmsg) {
+        	ilog(LOG_INFO, "no sendmsg");
           can_use_libjitter = 0;
         }
         // check it is not rtcp
         if (!is_rtp_packet) {
+        	ilog(LOG_INFO, "not rtp");
           can_use_libjitter = 0;
         }
         // check if destination is encrypted
@@ -921,6 +924,7 @@ forward:
           is_encrypted_packet = sink->media->protocol->srtp | sink->media->protocol->avpf;
         }
         if (is_encrypted_packet) {
+        	ilog(LOG_INFO, "secure packet");
           can_use_libjitter = 0;
         }
 
