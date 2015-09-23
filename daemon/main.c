@@ -553,7 +553,7 @@ no_kernel:
 		if (!mc.redis)
 			die("Cannot start up without Redis database");
 	}
-
+	init_libjitter_api(&mc.libjitter);
 	ctx->m->conf = mc;
 	callmaster_config_init(ctx->m);
 
@@ -568,7 +568,7 @@ no_kernel:
 
 	timeval_from_ms(&tmp_tv, graphite_interval*1000000);
 	set_graphite_interval_tv(&tmp_tv);
-        init_libjitter_api(&mc.libjitter);
+        
 }
 
 int main(int argc, char **argv) {
