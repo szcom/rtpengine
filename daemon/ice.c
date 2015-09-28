@@ -846,7 +846,7 @@ static void __cand_ice_foundation(struct call *call, struct ice_candidate *cand)
 
 /* agent must be locked */
 static struct ice_candidate_pair *__learned_candidate(struct ice_agent *ag, struct packet_stream *ps,
-		struct sockaddr_in6 *src, struct interface_address *ifa, unsigned long priority)
+                                                      struct sockaddr_in6 *src, struct interface_address *ifa, unsigned long priority, int use)
 {
 	struct ice_candidate *cand, *old_cand;
 	struct ice_candidate_pair *pair;
@@ -862,7 +862,7 @@ static struct ice_candidate_pair *__learned_candidate(struct ice_agent *ag, stru
 	__cand_ice_foundation(call, cand);
 
 	old_cand = __foundation_lookup(ag, &cand->foundation, ps->component);
-	if (old_cand && old_cand->priority > priority) {
+	if (old_cand && old_cand->priority > priority && !use) {
 		/* this is possible if two distinct requests are received from the same NAT IP
 		 * address, but from different ports. we cannot distinguish such candidates and
 		 * will drop the one with the lower priority */
@@ -1075,7 +1075,7 @@ int ice_request(struct packet_stream *ps, struct sockaddr_in6 *src, struct in6_a
 	cand = __cand_lookup(ag, src, ps->component);
 
 	if (!cand)
-		pair = __learned_candidate(ag, ps, src, ifa, attrs->priority);
+          pair = __learned_candidate(ag, ps, src, ifa, attrs->priority, attrs->use);
 	else
 		pair = __pair_lookup(ag, cand, ifa);
 
